@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="../static/estilovizualizacao.css">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='estilovizualizacao.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <title>Index</title>
+    <script>
+        // Função para submeter o formulário da linha selecionada
+        function submitForm(row) {
+            const form = row.querySelector('form');
+            if (form) {
+                form.submit();
+            }
+        }
+
+        
+    </script>
+</head>
+<body>
+    <div id="header-container">
+    <div id="logo" name="logo">
+        <div id="idlogosemparar">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" height="100px" width="100px" />
+            <img src="{{ url_for('static', filename='images/titulo_coreprocess.png') }}" height="40px" id="titulo_coreprocess" />
+        </div>
+    </div>
+
+    <div id="informacoes">
+        <form method="POST">
+            <div id="info_analise">
+                <div class="info_previa_analise">
+                    <div id="conteiner1_info">
+                        <div class="info_class" id="usu_info">
+                            {% for item in dados %}
+                            <label><strong>Analista: {{ item['USUARIO'] }}</strong></label>
+                            {% endfor %}
+                        </div>
+                        <div class="info_class" id="numprev_info">
+                            <label><strong>Número Da Previa: {{ numero }}</strong></label>
+                        </div>
+                        <div class="info_class" id="nome_info">
+                            <label><strong>Nome Da Previa: {{ nome }}</strong></label>
+                        </div>
+                    </div>
+                    <div id="conteiner2_info">
+                        
+                        <div class="info_class" id="datavenc_info">
+                            <label><strong> Dados de vencimento: {{ data_vencimento }}</strong></label>
+                        </div>
+                        <div class="info_class" id="tipo_info">
+                            <label><strong> Tipo: {{ tipos }}</strong></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    </div>
+
+    <hr color="black">
+
+    <div class="caixa_text_titulo">
+        <label class="text_titulo">Visualização das Prévias</label>
+    </div>
+
+    <div id="container_table">
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Tipo do Item</th>
+                    <th scope="col">Valor</th>
+                    <th scope="col">Variação (%)</th>
+                    <th scope="col">Variação (R$)</th>
+                    <th scope="col">Final de Processamento</th>
+                    <th scope="col">Comentario</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in dados %}
+                <tr>
+                    <td>{{ item['TIPO_VALOR'] }}</td>
+                    <td>{{ item['VALOR'] }}</td>
+                    <td>{{ item['VARIACAO'] }}</td>
+                    <td>{{ item['INICIO DE PROCESSAMENTO'] }}</td>
+                    <td>{{ item['FINAL DE PROCESSAMENTO'] }}</td>
+                    <td>{{ item['COMENTARIO'] }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

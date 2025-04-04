@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Comentário Salvo</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      background: #fff;
+      border-radius: 5px;
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    ul li {
+      margin: 5px 0;
+    }
+    .alert {
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    .alert-success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    a {
+      text-decoration: none;
+      color: #007BFF;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Exibe mensagens flash, se houver -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <h1>Comentário Salvo com Sucesso!</h1>
+    <p>Seu comentário foi enviado com sucesso. Confira abaixo os detalhes:</p>
+
+    <h2>Detalhes do Comentário</h2>
+    <ul>
+      <li><strong>ID do Comentário:</strong> {{ idcomentario }}</li>
+      <li><strong>Tipo:</strong> {{ tipos }}</li>
+      <li><strong>Comentário:</strong> {{ comentario }}</li>
+      <li><strong>Usuário:</strong> {{ usuario }}</li>
+      <li><strong>Data de Vencimento:</strong> {{ data_vencimento }}</li>
+      <li><strong>Nome do Ciclo:</strong> {{ nomeciclo }}</li>
+      <li><strong>Número do Ciclo:</strong> {{ numciclo }}</li>
+      <li><strong>Valor do Mês:</strong> {{ valor_mes }}</li>
+      <li><strong>Variação do Mês:</strong> {{ variacao_mes }}</li>
+      <li><strong>Data de Abertura:</strong> {{ data_abertura }}</li>
+      <li><strong>Hora de Alteração:</strong> {{ hora_alteracao }}</li>
+    </ul>
+
+    <p><a href="{{ url_for('index') }}">Voltar para a página inicial</a></p>
+  </div>
+</body>
+</html>

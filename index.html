@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="../static/estiloini.css">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='estiloini.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <title>Index</title>
+    <script>
+        // Função para submeter o formulário da linha selecionada
+        function submitForm(row, destino) {
+            const form = row.querySelector('form');
+            if (form) {
+                form.action = destino;
+                form.submit();
+            }
+        }
+
+        
+    </script>
+</head>
+<body>
+    <div id="logo" name="logo">
+        <div id="idlogosemparar">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" height="100px" width="100px" />
+            <img src="{{ url_for('static', filename='images/titulo_coreprocess.png') }}" height="40px" id="titulo_coreprocess" />
+        </div>
+    </div>
+    
+    <hr color="black">
+
+    <div id="tela_menu">
+        <div class="navbar">
+            <a class="active" href="#">Home |</a>
+            <a href="#">Previa |</a>
+            <a href="#">Faturamento |</a>
+            <a href="#">Adicionar |</a>
+            <a href="#">Encaminhar |</a>
+            <a href="#">Resumos |</a>
+        </div>
+    </div>
+
+    <hr color="black">
+
+    <div id="filtros">
+        <form method="POST">
+            <div id="op_filtros">
+                <div class="op_ind_filtros">
+                    <div id="checkbox_op_previas">
+                        <input type="checkbox" id="filtoeventual" name="filtoeventual" value="Eventual">
+                        <label for="filtroeventual">Eventual</label><br>
+                    </div>
+                    <div class="checkbox_op_previas">
+                        <input type="checkbox" id="filtroregular" name="filtroregular" value="Regular">
+                        <label for="filtroregular">Regular</label><br>
+                    </div>
+                </div>
+
+                <div class="op_ind_filtros" id="num_filtro_previa">
+                    <label for="num_op_previa">Digite o número da prévia:</label><br>
+                    <input type="number" id="num_op_previa" name="num_op_previa" class="input_op_previas">
+                </div>
+
+                <div class="op_ind_filtros" id="venc_filtro_previa">
+                    <label for="venc_op_previa">Digite a data de vencimiento:</label><br>
+                    <input type="date" id="data_vencimento" name="data_vencimento" class="input_op_previas">
+                </div>
+
+                <div class="op_ind_filtros" id="data_filtro_previa">
+                    <label for="data_inicio">Data de Início:</label><br>
+                    <input type="date" id="data_inicio" name="data_inicio" class="input_op_previas"><br>
+                    
+                    <label for="data_fim">Data de Fim:</label><br>
+                    <input type="date" id="data_fim" name="data_fim" class="input_op_previas">
+                </div>
+            </div>
+
+            <div id="butons_teste1">
+                <button type="submit"><i class="fa fa-fw fa-search"></i> FILTRAR </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="caixa_text_titulo">
+        <label class="text_titulo">Visualização das Prévias</label>
+    </div>
+
+    <div id="container_table">
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Ciclo</th>
+                    <th scope="col">Nome</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Início de Processamento</th>
+                    <th scope="col">Final de Processamento</th>
+                    <th scope="col">Valor do Mês</th>
+                    <th scope="col">Vencimento do Ciclo</th>
+                    <th scope="col">Análise</th>
+                    <th scope="col">Visualizar</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in dados %}
+                <tr>
+                    <td>{{ item['NUMERO DO CICLO'] }}</td>
+                    <td>{{ item['NOME'] }}</td>
+                    <td>{{ item['TIPO'] }}</td>
+                    <td>{{ item['INICIO DE PROCESSAMENTO'] }}</td>
+                    <td>{{ item['FINAL DE PROCESSAMENTO'] }}</td>
+                    <td>{{ item['TOTAL_MES'] }}</td>
+                    <td>{{ item['VENCIMENTO_CICLO'] }}</td>
+                    <td>
+                        <!-- Cada linha possui um formulário escondido -->
+                        <form method="POST" action="{{ url_for('analise') }}">
+                            <input type="hidden" name="numciclo" value="{{ item['NUMERO DO CICLO'] }}">
+                            <input type="hidden" name="data_vencimento" value="{{ item['VENCIMENTO_CICLO'] }}">
+                            <input type="hidden" name="nomeciclo" value="{{ item['NOME'] }}">
+                            <input type="hidden" name="tipociclo" value="{{ item['TIPO'] }}">
+                            <button type="button" onclick="submitForm(this.closest('tr'), '{{ url_for('analise') }}')">
+                                <i class="fa fa-fw fa-search"></i>
+                            </button>
+                        </form>
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('vizualizacao') }}" >
+                            <input type="hidden" name="numciclo" value="{{ item['NUMERO DO CICLO'] }}">
+                            <input type="hidden" name="data_vencimento" value="{{ item['VENCIMENTO_CICLO'] }}">
+                            <input type="hidden" name="nomeciclo" value="{{ item['NOME'] }}">
+                            <input type="hidden" name="tipociclo" value="{{ item['TIPO'] }}">
+                            <button type="button" onclick="submitForm(this.closest('tr'), '{{ url_for('vizualizacao') }}')">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='estiloanalise.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <title>Analise</title>
+    <style>
+        
+    </style>
+    <script>
+    //funcao do arcordeon
+
+    function openAgrup(evt, VLagrup) {
+    const panel = document.getElementById(VLagrup);
+    const button = evt.currentTarget;
+
+    if (panel.classList.contains("active")) {
+        panel.style.maxHeight = "0px"; // Fechar
+        setTimeout(() => { panel.style.display = "none"; }, 300); // Pequeno delay para suavizar
+        panel.classList.remove("active");
+        button.classList.remove("active");
+    } else {
+        panel.style.display = "block";
+        setTimeout(() => { panel.style.maxHeight = panel.scrollHeight + "px"; }, 300); 
+        panel.classList.add("active");
+        button.classList.add("active");
+    }
+}
+
+// Nova função unificada que recebe um prefixo e o id da linha
+function toggleCommentGeneric(prefix, rowId) {
+    const commentRow = document.getElementById(prefix + 'comment-' + rowId);
+    if (commentRow) {
+        commentRow.style.display = (commentRow.style.display === "table-row") ? "none" : "table-row";
+
+        const panel = commentRow.closest('.panel');
+        if (panel) {
+            setTimeout(() => {
+                panel.style.maxHeight = panel.scrollHeight + "px";
+            }, 100);
+        }
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    // Atualizado para determinar o prefixo com base no id da linha (ex.: "d1-" ou "d2-")
+    document.querySelectorAll(".comment-btn").forEach(button => {
+        button.addEventListener("click", function(e) {
+            e.stopPropagation();
+            const rowId = this.dataset.rowid;
+            let parentRow = this.closest("tr");
+            let prefix = "";
+            if (parentRow) {
+                if (parentRow.id.startsWith("d1-")) {
+                    prefix = "d1-";
+                } else if (parentRow.id.startsWith("d2-")) {
+                    prefix = "d2-";
+                }
+            }
+            toggleCommentGeneric(prefix, rowId);
+        });
+    });
+});
+
+// Mantivemos a função original, caso seja necessária em algum contexto
+function toggleComment(rowId) {
+    const commentRow = document.getElementById(`comment-${rowId}`);
+    if (commentRow) {
+        commentRow.style.display = (commentRow.style.display === "table-row") ? "none" : "table-row";
+
+        const panel = commentRow.closest('.panel');
+        if (panel) {
+            setTimeout(() => {
+                panel.style.maxHeight = panel.scrollHeight + "px";
+            }, 100);
+        }
+    }
+}
+
+// Segunda adição – atualizada para usar a função unificada (mesma lógica duplicada mantida)
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".comment-btn").forEach(button => {
+        button.addEventListener("click", function(e) {
+            e.stopPropagation();
+            const rowId = this.dataset.rowid;
+            let parentRow = this.closest("tr");
+            let prefix = "";
+            if (parentRow) {
+                if (parentRow.id.startsWith("d1-")) {
+                    prefix = "d1-";
+                } else if (parentRow.id.startsWith("d2-")) {
+                    prefix = "d2-";
+                }
+            }
+            toggleCommentGeneric(prefix, rowId);
+        });
+    });
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".panel, .comment-row").forEach(element => {
+        element.style.display = "none";
+    });
+
+    // Style variations
+    document.querySelectorAll('.variation').forEach(td => {
+        const valueText = td.textContent.replace('%', '').replace(',', '.').trim();
+        const value = parseFloat(valueText);
+        
+        if (!isNaN(value)) {
+            // Add color classes
+            td.classList.add(value >= 0 ? 'positive' : 'negative');
+            
+            // Format text content
+            if (!valueText.startsWith('+') && !valueText.startsWith('-')) {
+                td.textContent = (value >= 0 ? '+' : '-') + valueText + '%';
+            }
+        }
+    });
+
+    document.querySelectorAll(".panel, .comment-row").forEach(element => {
+        element.style.display = "none";
+    });
+
+    document.querySelectorAll('table').forEach(table => {
+        const rows = table.querySelectorAll("tbody tr:not(.comment-row)");
+        rows.forEach(row => {
+            const hasData = Array.from(row.querySelectorAll("td"))
+                .some(cell => {
+                    const content = cell.textContent.trim();
+                    return content && content !== '-' && content !== '0';
+                });
+            row.style.display = hasData ? '' : 'none';
+        });
+    }); 
+});
+
+document.addEventListener("DOMContentLoaded", function() {
+    console.log("DOM carregado – anexando event listeners para formulários de comentário.");
+    const commentForms = document.querySelectorAll(".comment-form");
+
+    commentForms.forEach(form => {
+        form.addEventListener("submit", function(e) {
+            e.preventDefault();
+            console.log("Formulário de comentário submetido.");
+
+            // Captura o input que contém o id do comentário
+            const rowIdInput = this.querySelector("input[name='id_comentario']");
+            if (rowIdInput) {
+                // Remove quaisquer caracteres que não sejam dígitos e converte para inteiro
+                let rawId = rowIdInput.value;
+                rawId = rawId.replace(/\D/g, '');
+                const numericId = parseInt(rawId, 10) || 1;
+                rowIdInput.value = numericId.toString();
+                
+                // Busca o elemento da linha usando o id numérico
+                const rowElement = document.getElementById("row-" + numericId.toString());
+
+                // Envia os dados via Fetch para o backend (Python)
+                const formData = new FormData(this);
+                fetch("{{ url_for('save_comment') }}", {
+                    method: "POST",
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Resposta do servidor:", data);
+                    let messageDiv = this.querySelector('.comment-message');
+                    if (!messageDiv) {
+                        messageDiv = document.createElement('div');
+                        messageDiv.className = 'comment-message';
+                        this.appendChild(messageDiv);
+                    }
+                    if (data.status === 'success') {
+                        messageDiv.innerHTML = `<p class="success-message">${data.message}</p>`;
+                        this.querySelector("textarea[name='comentario']").value = "";
+                        this.querySelector("input[name='valor_mes']").value = "";
+                        this.querySelector("input[name='variacao_mes']").value = "";
+                    } else {
+                        messageDiv.innerHTML = `<p class="error-message">${data.message}</p>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro no envio:', error);
+                    let messageDiv = this.querySelector('.comment-message');
+                    if (!messageDiv) {
+                        messageDiv = document.createElement('div');
+                        messageDiv.className = 'comment-message';
+                        this.appendChild(messageDiv);
+                    }
+                    messageDiv.innerHTML = `<p class="error-message">Erro ao enviar comentário.</p>`;
+                });
+            };
+        });
+    });
+});
+
+
+
+
+
+
+
+
+    
+
+
+    
+    /*function toggleComment(rowId) {
+      const commentRow = document.getElementById(`comment-${rowId}`);
+      if (commentRow.style.display === "table-row") {
+        commentRow.style.display = "none";
+      } else {
+        commentRow.style.display = "table-row";
+      }
+      
+      const panel = commentRow.closest('.panel');
+      if (panel) {
+        setTimeout(() => {
+          panel.style.maxHeight = panel.scrollHeight + "px";
+        }, 100);
+      }
+    }
+    
+
+      
+     /* document.querySelectorAll('.variation').forEach(span => {
+        let valueText = span.textContent.replace('%', '').replace(',', '.').trim();
+        let value = parseFloat(valueText);
+        if (!isNaN(value)) {
+          let formattedValue = value.toFixed(2).replace('.', ',') + '%';
+          span.textContent = (value >= 0 ? '+' : '') + formattedValue;
+          span.closest('tr').classList.add(value >= 0 ? 'positive' : 'negative');
+        }
+      });*/
+      
+    
+
+    </script>
+</head>
+<body>
+    <div id="header-container">
+    <div id="logo" name="logo">
+        <div id="idlogosemparar">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" height="100px" width="100px" />
+            <img src="{{ url_for('static', filename='images/titulo_coreprocess.png') }}" height="40px" id="titulo_coreprocess" />
+        </div>
+    </div>
+
+    <div id="informacoes">
+        <form method="POST">
+            <div id="info_analise">
+                <div class="info_previa_analise">
+                    <div id="conteiner1_info">
+                        <div class="info_class" id="usu_info">
+                            <label><strong>Usuario: {{ usuario }}</strong></label>
+                        </div>
+                        <div class="info_class" id="numprev_info">
+                            <label><strong>Número Da Previa: {{ numero }}</strong></label>
+                        </div>
+                        <div class="info_class" id="nome_info">
+                            <label><strong>Nome Da Previa: {{ nome }}</strong></label>
+                        </div>
+                    </div>
+                    <div id="conteiner2_info">
+                        
+                        <div class="info_class" id="datavenc_info">
+                            <label><strong> Dados de vencimento: {{ data_vencimento }}</strong></label>
+                        </div>
+                        <div class="info_class" id="tipo_info">
+                            <label><strong> Tipo: {{ tipos }}</strong></label>
+                        </div>
+                    </div>
+                    <div id="conteiner3_info">
+                        <div class="info_class" id="daataaber_info">
+                            <label><strong> Data de Abertura: {{ data_abertura }}</strong></label>
+                        </div>
+                        <div class="info_class" id="mod_info">
+                            <label><strong> Alteração: {{ hora_alteracao }}</strong></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    </div>
+
+    <hr color="black">
+
+    <div class="caixa_text_titulo">
+        <label class="text_titulo">Visualização dos Valores</label>
+    </div>
+
+    <!-- Tables Section -->
+    {% if dados1 %}
+    <button class="accordion" onclick="openAgrup(event, 'recorrente')">Valores Recorrentes</button>
+    <div id="recorrente" class="panel">
+        <table>
+            <thead>
+                <tr>
+                    <th>TIPO</th>
+                    {% for col in colunas1 %}
+                        <th>
+                            {% if col.endswith('_VAR') %}
+                                VARIAÇÃO
+                            {% else %}
+                                {{ col }}
+                            {% endif %}
+                        </th>
+                    {% endfor %}
+                    <th>COMENTÁRIO</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for linha in dados1 %}
+                {% set row_id = loop.index %}
+                <tr id="d1-row-{{ row_id }}" data-mes="{{ linha['MES_REFERENCIA'] }}" data-tipo="{{ linha['TIPO'] }}">
+                    <td>{{ linha['TIPO'] }}</td>
+                    {% for col in colunas1 %}
+                        <td class="{% if col.endswith('_VAR') %}variation{% endif %}">
+                            {{ linha[col] if col in linha else "-" }}
+                        </td>
+                    {% endfor %}
+                    <td>
+                        <button type="button" class="comment-btn" data-rowid="{{ row_id }}" onclick="toggleCommentGeneric('d1-', '{{ row_id }}')"> 
+                            <i class="fa fa-comment-o"></i>
+                        </button>
+                    </td>
+                </tr>
+                <tr class="comment-row" id="d1-comment-{{ row_id }}" style="display:none;">
+                    <td colspan="{{ colunas1|length + 2 }}">
+                        <div id="spa-container">
+                            <form method="POST" action="{{ url_for('save_comment') }}" class="comment-form">
+                                <input type="hidden" name="data_vencimento" value="{{ data_vencimento }}">
+                                <input type="hidden" name="nomeciclo" value="{{ nome }}">
+                                <input type="hidden" name="numciclo" value="{{ numero }}">
+                                <input type="hidden" name="id_comentario" value="{{ row_id }}">
+                                <input type="hidden" name="tipos" value="{{ tipos }}">
+                                <input type="hidden" name="usuario" value="{{ usuario }}">
+                                <input type="hidden" name="data_abertura" value="{{ data_abertura }}">
+                                <input type="hidden" name="hora_alteracao" value="{{ hora_alteracao }}">
+                                <div>
+                                    <label for="d1-valor_mes{{ row_id }}">Valor:</label>
+                                    <input type="text" name="valor_mes" id="d1-valor_mes{{ row_id }}" placeholder="Digite o valor" required>
+                                </div>
+                                <div>
+                                    <label for="d1-variacao_mes{{ row_id }}">Variação:</label>
+                                    <input type="text" name="variacao_mes" id="d1-variacao_mes{{ row_id }}" placeholder="Digite a variação" required>
+                                </div>
+                                <div>
+                                    <label for="d1-tipo_valor{{ row_id }}">Tipo:</label>
+                                    <select name="tipo_valor" id="d1-tipo_valor{{ row_id }}" placeholder="Selecione o tipo" required>
+                                        <option value="Debito Recorrente">Debito Recorrente</option>
+                                        <option value="Credito Recorrente">Credito Recorrente</option>
+                                    </select>
+                                </div>
+                                <textarea 
+                                    name="comentario" 
+                                    rows="2" 
+                                    placeholder="Digite seu comentário..."
+                                    style="width: 98.5%; margin: 5px;"
+                                    required
+                                ></textarea>
+                                <button type="submit" class="save-btn">
+                                    <i class="fa fa-save "></i> Salvar
+                                </button>
+                                <div class="comment-message"></div>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    
+
+    {% if dados2 %}
+    <button class="accordion" onclick="openAgrup(event, 'nrecorrentes')">Valores Não Recorrentes</button>
+    <div id="nrecorrentes" class="panel">
+        <table>
+            <thead>
+                <tr>
+                    <th>TIPO</th>
+                    {% for col in colunas2 %}
+                    <th>
+                        {% if col.endswith('_VAR') %}
+                            VARIAÇÃO
+                        {% else %}
+                            {{ col }}
+                        {% endif %}
+                    </th>
+                    {% endfor %}
+                    <th>COMENTÁRIO</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for linha in dados2 %}
+                {% set row_id = loop.index %}
+                <tr id="d2-row-{{ row_id }}" data-mes="{{ linha['MES_REFERENCIA'] }}" data-tipo="{{ linha['TIPO'] }}">
+                    <td>{{ linha['TIPO'] }}</td>
+                    {% for col in colunas2 %}
+                    <td class="{% if col.endswith('_VAR') %}variation{% endif %}">
+                        {{ linha[col] if col in linha else '-' }}
+                    </td>
+                    {% endfor %}
+                    <td>
+                        <button type="button" class="comment-btn" data-rowid="{{ row_id }}" onclick="toggleCommentGeneric('d2-', '{{ row_id }}')">
+                            <i class="fa fa-comment-o"></i>
+                        </button>
+                    </td>
+                </tr>
+                <tr class="comment-row" id="d2-comment-{{ row_id }}" style="display:none;">
+                    <td colspan="{{ colunas2|length + 2 }}">
+                        <div id="spa-container">
+                            <form method="POST" action="{{ url_for('save_comment') }}" class="comment-form">
+                                <input type="hidden" name="data_vencimento" value="{{ data_vencimento }}">
+                                <input type="hidden" name="nomeciclo" value="{{ nome }}">
+                                <input type="hidden" name="numciclo" value="{{ numero }}">
+                                <input type="hidden" name="id_comentario" value="{{ row_id }}">
+                                <input type="hidden" name="tipos" value="{{ tipos }}">
+                                <input type="hidden" name="usuario" value="{{ usuario }}">
+                                <input type="hidden" name="data_abertura" value="{{ data_abertura }}">
+                                <input type="hidden" name="hora_alteracao" value="{{ hora_alteracao }}">
+                                <div>
+                                    <label for="d2-valor_mes{{ row_id }}">Valor:</label>
+                                    <input type="text" name="valor_mes" id="d2-valor_mes{{ row_id }}" placeholder="Digite o valor" required>
+                                </div>
+                                <div>
+                                    <label for="d2-variacao_mes{{ row_id }}">Variação:</label>
+                                    <input type="text" name="variacao_mes" id="d2-variacao_mes{{ row_id }}" placeholder="Digite a variação" required>
+                                </div>
+                                <div>
+                                    <label for="d2-tipo_valor{{ row_id }}">Tipo:</label>
+                                    <select name="tipo_valor" id="d2-tipo_valor{{ row_id }}" placeholder="Selecione o tipo" required>
+                                        <option value="Debito Não Recorrente">Debito Não Recorrente</option>
+                                        <option value="Credito Não Recorrente">Credito Não Recorrente</option>
+                                    </select>
+                                </div>
+                                <textarea 
+                                    name="comentario" 
+                                    rows="2" 
+                                    placeholder="Digite seu comentário..."
+                                    style="width: 98.5%; margin: 5px;"
+                                    required
+                                ></textarea>
+                                <button type="submit" class="save-btn">
+                                    <i class="fa fa-save"></i> Salvar
+                                </button>
+                                <div class="comment-message"></div>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    
+
+
+    {% if dados3 %}
+    <button class="accordion" onclick="openAgrup(event, 'outros')">Outros Valores</button>
+    <div id="outros" class="panel">
+        <table>
+            <thead>
+                <tr>
+                    <th>TIPO</th>
+                    {% for col in colunas3 %}
+                    <th>
+                        {% if col.endswith('_VAR') %}
+                            VARIAÇÃO
+                        {% else %}
+                            {{ col }}
+                        {% endif %}
+                    </th>
+                    {% endfor %}
+                    <th>COMENTÁRIO</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for linha in dados3 %}
+                {% set row_id = loop.index %}
+                <tr id="d3-row-{{ row_id }}" data-mes="{{ linha['MES_REFERENCIA'] }}" data-tipo="{{ linha['TIPO'] }}">
+                    <td>{{ linha['TIPO'] }}</td>
+                    {% for col in colunas3 %}
+                    <td class="{% if col.endswith('_VAR') %}variation{% endif %}">
+                        {{ linha[col] if col in linha else '-' }}
+                    </td>
+                    {% endfor %}
+                    <td>
+                        <button type="button" class="comment-btn" data-rowid="{{ row_id }}" onclick="toggleCommentGeneric('d3-', '{{ row_id }}')">
+                            <i class="fa fa-comment-o"></i>
+                        </button>
+                    </td>
+                </tr>
+                <tr class="comment-row" id="d3-comment-{{ row_id }}" style="display:none;">
+                    <td colspan="{{ colunas3|length + 2 }}">
+                        <div id="spa-container">
+                            <form method="POST" action="{{ url_for('save_comment') }}" class="comment-form">
+                                <input type="hidden" name="data_vencimento" value="{{ data_vencimento }}">
+                                <input type="hidden" name="nomeciclo" value="{{ nome }}">
+                                <input type="hidden" name="numciclo" value="{{ numero }}">
+                                <input type="hidden" name="id_comentario" value="{{ row_id }}">
+                                <input type="hidden" name="tipos" value="{{ tipos }}">
+                                <input type="hidden" name="usuario" value="{{ usuario }}">
+                                <input type="hidden" name="data_abertura" value="{{ data_abertura }}">
+                                <input type="hidden" name="hora_alteracao" value="{{ hora_alteracao }}">
+                                <div>
+                                    <label for="d3-valor_mes{{ row_id }}">Valor:</label>
+                                    <input type="text" name="valor_mes" id="d3-valor_mes{{ row_id }}" placeholder="Digite o valor" required>
+                                </div>
+                                <div>
+                                    <label for="d3-variacao_mes{{ row_id }}">Variação:</label>
+                                    <input type="text" name="variacao_mes" id="d3-variacao_mes{{ row_id }}" placeholder="Digite a variação" required>
+                                </div>
+                                <div>
+                                    <label for="d3-tipo_valor{{ row_id }}">Tipo:</label>
+                                    <select name="tipo_valor" id="d3-tipo_valor{{ row_id }}" placeholder="Selecione o tipo" required>
+                                        <option value="Debito Não Recorrente">Debito Não Recorrente</option>
+                                        <option value="Credito Não Recorrente">Credito Não Recorrente</option>
+                                    </select>
+                                </div>
+                                <textarea 
+                                    name="comentario" 
+                                    rows="2" 
+                                    placeholder="Digite seu comentário..."
+                                    style="width: 98.5%; margin: 5px;"
+                                    required
+                                ></textarea>
+                                <button type="submit" class="save-btn">
+                                    <i class="fa fa-save"></i> Salvar
+                                </button>
+                                <div class="comment-message"></div>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if dados4 %}
+    <button class="accordion" onclick="openAgrup(event, 'quantidade')">Quantidades</button>
+    <div id="quantidade" class="panel">
+        <table>
+            <thead>
+                <tr>
+                    <th>TIPO</th>
+                    {% for col in colunas4 %}
+                    <th>
+                        {% if col.endswith('_VAR') %}
+                            VARIAÇÃO
+                        {% else %}
+                            {{ col }}
+                        {% endif %}
+                    </th>
+                    {% endfor %}
+                    <th>COMENTÁRIO</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for linha in dados4 %}
+                {% set row_id = loop.index %}
+                <tr id="d4-row-{{ row_id }}" data-mes="{{ linha['MES_REFERENCIA'] }}" data-tipo="{{ linha['TIPO'] }}">
+                    <td>{{ linha['TIPO'] }}</td>
+                    {% for col in colunas4 %}
+                    <td class="{% if col.endswith('_VAR') %}variation{% endif %}">
+                        {{ linha[col] if col in linha else '-' }}
+                    </td>
+                    {% endfor %}
+                    <td>
+                        <button type="button" class="comment-btn" data-rowid="{{ row_id }}" onclick="toggleCommentGeneric('d4-', '{{ row_id }}')">
+                            <i class="fa fa-comment-o"></i>
+                        </button>
+                    </td>
+                </tr>
+                <tr class="comment-row" id="d4-comment-{{ row_id }}" style="display:none;">
+                    <td colspan="{{ colunas4|length + 2 }}">
+                        <div id="spa-container">
+                            <form method="POST" action="{{ url_for('save_comment') }}" class="comment-form">
+                                <input type="hidden" name="data_vencimento" value="{{ data_vencimento }}">
+                                <input type="hidden" name="nomeciclo" value="{{ nome }}">
+                                <input type="hidden" name="numciclo" value="{{ numero }}">
+                                <input type="hidden" name="id_comentario" value="{{ row_id }}">
+                                <input type="hidden" name="tipos" value="{{ tipos }}">
+                                <input type="hidden" name="usuario" value="{{ usuario }}">
+                                <input type="hidden" name="data_abertura" value="{{ data_abertura }}">
+                                <input type="hidden" name="hora_alteracao" value="{{ hora_alteracao }}">
+                                <div>
+                                    <label for="d4-valor_mes{{ row_id }}">Valor:</label>
+                                    <input type="text" name="valor_mes" id="d4-valor_mes{{ row_id }}" placeholder="Digite o valor" required>
+                                </div>
+                                <div>
+                                    <label for="d4-variacao_mes{{ row_id }}">Variação:</label>
+                                    <input type="text" name="variacao_mes" id="d4-variacao_mes{{ row_id }}" placeholder="Digite a variação" required>
+                                </div>
+                                <div>
+                                    <label for="d4-tipo_valor{{ row_id }}">Tipo:</label>
+                                    <select name="tipo_valor" id="d4-tipo_valor{{ row_id }}" placeholder="Selecione o tipo" required>
+                                        <option value="Debito Não Recorrente">Debito Não Recorrente</option>
+                                        <option value="Credito Não Recorrente">Credito Não Recorrente</option>
+                                    </select>
+                                </div>
+                                <textarea 
+                                    name="comentario" 
+                                    rows="2" 
+                                    placeholder="Digite seu comentário..."
+                                    style="width: 98.5%; margin: 5px;"
+                                    required
+                                ></textarea>
+                                <button type="submit" class="save-btn">
+                                    <i class="fa fa-save"></i> Salvar
+                                </button>
+                                <div class="comment-message"></div>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Maintained annotation section 
+    <div id="anotacao_analise">
+        <div id="container_anotacao" class="hidden">
+            <form id="send-form" method="POST">
+                <textarea name="testeinput" placeholder="Digite seus comentários..."></textarea>
+                <button type="submit" id="envbanc">Enviar</button>
+            </form>
+        </div>
+    </div>-->
+</body>
+</html>
